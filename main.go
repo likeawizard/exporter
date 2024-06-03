@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"go/ast"
@@ -23,8 +24,16 @@ type methodWrapper struct {
 }
 
 func main() {
-	fileName := "repository/repository_export.go"
-	buidTag := "integration"
+	var targetType, buildTag, outputName string
+	flag.StringVar(&targetType, "name", "", "target type to export")
+	flag.StringVar(&outputName, "output", "", "output file name")
+	flag.StringVar(&buildTag, "tag", "", "build tag")
+	flag.Parse()
+
+	fileName := fmt.Sprintf("%s_export.go", targetType)
+	if outputName == "" {
+		outputName = fileName
+	}
 	os.Remove(fileName)
 	output, err := os.Create(fileName)
 	if err != nil {
@@ -32,13 +41,12 @@ func main() {
 		return
 	}
 	defer output.Close()
-	if buidTag != "" {
-		output.Write([]byte(fmt.Sprintf("//go:build %s\n\n", buidTag)))
+	if buildTag != "" {
+		output.Write([]byte(fmt.Sprintf("//go:build %s\n\n", buildTag)))
 	}
 
-	name := "github.com/likeawizard/exporter/repository"
 	cfg := &packages.Config{Mode: packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedTypesSizes}
-	pkgs, err := packages.Load(cfg, name)
+	pkgs, err := packages.Load(cfg, ".")
 	if err != nil {
 		fmt.Println(err)
 	}

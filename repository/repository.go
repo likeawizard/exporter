@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+//go:generate go run github.com/likeawizard/exporter --name=repository --tag=integration --output=repository_export.go
 const connStr = "user=postgres dbname=postgres password=postgres sslmode=disable"
 
 var (
