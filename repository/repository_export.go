@@ -5,6 +5,7 @@ package repository
 import "context"
 
 type (
+	Service     = service
 	Repository  = repository
 	UpdateQuery = updateQuery
 	InsertQuery = insertQuery

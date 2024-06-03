@@ -60,8 +60,6 @@ func main() {
 		imports[imp.Name] = imp.PkgPath
 	}
 
-	fmt.Println("Imports: ", imports)
-
 	names := pkg.Types.Scope().Names()
 	for _, n := range names {
 		obj := pkg.Types.Scope().Lookup(n)
@@ -121,6 +119,9 @@ func main() {
 					default:
 						fmt.Println("Unknown receiver", x.Name.Name, t)
 
+					}
+					if m.Receiver.Type != targetType {
+						return false
 					}
 					funcType := x.Type
 					if funcType.Params != nil {
