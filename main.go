@@ -41,7 +41,7 @@ func main() {
 	if targetOut != "" {
 		outName = targetOut
 	}
-
+	replacements := []string{targetType, outName}
 	os.Remove(fileName)
 
 	cfg := &packages.Config{Mode: packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedTypesSizes}
@@ -80,7 +80,8 @@ func main() {
 	}
 
 	for k := range toExport {
-		if _, ok := public[exportCase(k, nil)]; ok {
+		if _, ok := public[exportCase(k, nil, replacements...)]; ok {
+			fmt.Printf("name collision for %q. skipping export...\n", k)
 			delete(toExport, k)
 		}
 	}
@@ -235,8 +236,6 @@ func main() {
 			return true
 		})
 	}
-
-	replacements := []string{targetType, outName}
 
 	output, err := os.Create(fileName)
 	if err != nil {
