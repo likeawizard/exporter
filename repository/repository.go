@@ -66,7 +66,7 @@ func (r *repository) list() ([]Entity, error) {
 	return []Entity{}, nil
 }
 
-func (r *repository) create(q insertQuery) (str string, err error) {
+func (r *repository) create(q *insertQuery) (str string, err error) {
 	if q.name == "" {
 		return "", errInvalidName
 	}

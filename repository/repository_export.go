@@ -27,7 +27,7 @@ func (r Repo) Get(ctx context.Context, id int) (*Entity, error) {
 func (r *Repo) List() ([]Entity, error) {
 	return r.list()
 }
-func (r *Repo) Create(q InsertQuery) (str string, err error) {
+func (r *Repo) Create(q *InsertQuery) (str string, err error) {
 	return r.create(q)
 }
 func (r *Repo) Update(id int, partentID int, q UpdateQuery) (string, error) {

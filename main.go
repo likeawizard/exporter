@@ -292,7 +292,7 @@ func main() {
 					typeToUse = exportCase(a.Type, nil, replacements...)
 				}
 
-				g.Id(a.Name).Qual(a.Qual, typeToUse)
+				g.Id(a.Name).Op(a.Op).Qual(a.Qual, typeToUse)
 			}
 		}).ParamsFunc(func(g *jen.Group) {
 			for _, r := range m.Return {
