@@ -14,6 +14,7 @@ type arg struct {
 	Name string
 	Type string
 	Op   string
+	Qual string
 }
 
 type methodWrapper struct {
@@ -53,19 +54,27 @@ func main() {
 	pkg := pkgs[0]
 
 	toExport := make(map[string]struct{})
+	imports := make(map[string]string)
+
+	for _, imp := range pkg.Imports {
+		imports[imp.Name] = imp.PkgPath
+	}
+
+	fmt.Println("Imports: ", imports)
 
 	names := pkg.Types.Scope().Names()
-
 	for _, n := range names {
 		obj := pkg.Types.Scope().Lookup(n)
 		if !obj.Exported() {
 			toExport[obj.Name()] = struct{}{}
+
 		}
 	}
 
 	exportTypes := make([]string, 0)
 	exportVariables := make([]string, 0)
 	exportConstants := make([]string, 0)
+	importsNeeded := make(map[string]struct{})
 	wrappedMethods := make([]methodWrapper, 0)
 
 	for _, file := range pkg.Syntax {
@@ -117,9 +126,31 @@ func main() {
 					if funcType.Params != nil {
 						for _, p := range funcType.Params.List {
 							for _, n := range p.Names {
+								op := ""
+								typeExpr := ""
+								qual := ""
+								switch t := p.Type.(type) {
+								case *ast.Ident:
+									typeExpr = t.Name
+								case *ast.ArrayType:
+									typeExpr = t.Elt.(*ast.Ident).Name
+									op = "[]"
+								case *ast.StarExpr:
+									typeExpr = t.X.(*ast.Ident).Name
+									op = "*"
+								case *ast.SelectorExpr:
+									name := t.X.(*ast.Ident).Name
+									importsNeeded[name] = struct{}{}
+									typeExpr = t.Sel.Name
+									qual = imports[name]
+								default:
+									fmt.Printf("Unknown type: %T %+v\n", t, t)
+								}
 								m.Arguments = append(m.Arguments, arg{
 									Name: n.Name,
-									Type: p.Type.(*ast.Ident).Name,
+									Type: typeExpr,
+									Op:   op,
+									Qual: qual,
 								})
 							}
 						}
@@ -130,6 +161,7 @@ func main() {
 						for _, r := range funcType.Results.List {
 							op := ""
 							typeExpr := ""
+							qual := ""
 							switch t := r.Type.(type) {
 							case *ast.Ident:
 								typeExpr = t.Name
@@ -139,6 +171,11 @@ func main() {
 							case *ast.StarExpr:
 								typeExpr = t.X.(*ast.Ident).Name
 								op = "*"
+							case *ast.SelectorExpr:
+								name := t.X.(*ast.Ident).Name
+								importsNeeded[name] = struct{}{}
+								typeExpr = t.Sel.Name
+								qual = imports[name]
 							default:
 								fmt.Printf("Unknown type: %T\n", t)
 							}
@@ -150,6 +187,7 @@ func main() {
 								Name: namedReturn,
 								Type: typeExpr,
 								Op:   op,
+								Qual: qual,
 							})
 						}
 					}
@@ -209,11 +247,12 @@ func main() {
 				if _, ok := toExport[a.Type]; ok {
 					typeToUse = exportCase(a.Type)
 				}
-				g.Id(a.Name).Id(typeToUse)
+
+				g.Id(a.Name).Qual(a.Qual, typeToUse)
 			}
 		}).ParamsFunc(func(g *jen.Group) {
 			for _, r := range m.Return {
-				g.Id(r.Name).Op(r.Op).Id(r.Type)
+				g.Id(r.Name).Op(r.Op).Qual(r.Qual, r.Type)
 			}
 		}).Block(
 			jen.Return().Id(m.Receiver.Name).Dot(m.Name).CallFunc(func(g *jen.Group) {

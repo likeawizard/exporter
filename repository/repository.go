@@ -1,11 +1,12 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 )
 
-//go:generate go run github.com/likeawizard/exporter --name=repository --tag=integration --output=repository_export.go
+//go:generate go run github.com/likeawizard/exporter --name=repository --output=repository_export.go
 const connStr = "user=postgres dbname=postgres password=postgres sslmode=disable"
 
 var (
@@ -41,7 +42,7 @@ func NewRepository(conn *sql.Conn) *repository {
 	return &repository{conn: conn}
 }
 
-func (r repository) get(id int) (*Entity, error) {
+func (r repository) get(ctx context.Context, id int) (*Entity, error) {
 	if id == 0 {
 		return nil, errNotFound
 	}
