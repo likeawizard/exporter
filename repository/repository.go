@@ -17,6 +17,10 @@ var (
 )
 
 type (
+	service struct {
+		conn *sql.Conn
+	}
+
 	repository struct {
 		conn *sql.Conn
 	}
@@ -40,6 +44,10 @@ func getConnection() (*sql.Conn, error) {
 
 func NewRepository(conn *sql.Conn) *repository {
 	return &repository{conn: conn}
+}
+
+func (s *service) do() error {
+	return nil
 }
 
 func (r repository) get(ctx context.Context, id int) (*Entity, error) {
