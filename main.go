@@ -79,6 +79,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	for k := range toExport {
+		if _, ok := public[exportCase(k, nil)]; ok {
+			delete(toExport, k)
+		}
+	}
+
 	exportTypes := make([]string, 0)
 	exportVariables := make([]string, 0)
 	exportConstants := make([]string, 0)
