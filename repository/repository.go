@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-//go:generate go run github.com/likeawizard/exporter --name=repository --output=repository_export.go
+//go:generate go run github.com/likeawizard/exporter --name=repository --outname=Repo --output=repository_export.go
 const connStr = "user=postgres dbname=postgres password=postgres sslmode=disable"
 
 var (
@@ -17,6 +17,10 @@ var (
 )
 
 type (
+	Repository interface {
+		get(ctx context.Context, id int) (*Entity, error)
+	}
+
 	service struct {
 		conn *sql.Conn
 	}
