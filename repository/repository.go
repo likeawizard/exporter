@@ -26,6 +26,10 @@ type (
 	insertQuery struct {
 		name string
 	}
+
+	Entity struct {
+		ID int
+	}
 )
 
 func getConnection() (*sql.Conn, error) {
@@ -36,20 +40,19 @@ func NewRepository(conn *sql.Conn) *repository {
 	return &repository{conn: conn}
 }
 
-func (r repository) get(id int) (string, error) {
+func (r repository) get(id int) (*Entity, error) {
 	if id == 0 {
-		return "", errNotFound
+		return nil, errNotFound
 	}
 
-	return "Hello, World!", nil
+	return &Entity{}, nil
 }
 
-//
-//func (r *repository) list() ([]string, error) {
-//	return []string{"Hello", "World!"}, nil
-//}
+func (r *repository) list() ([]Entity, error) {
+	return []Entity{}, nil
+}
 
-func (r *repository) create(q insertQuery) (string, error) {
+func (r *repository) create(q insertQuery) (str string, err error) {
 	if q.name == "" {
 		return "", errInvalidName
 	}
@@ -57,7 +60,7 @@ func (r *repository) create(q insertQuery) (string, error) {
 	return q.name, nil
 }
 
-func (r *repository) update(id int, q updateQuery) (string, error) {
+func (r *repository) update(id, partentID int, q updateQuery) (string, error) {
 	if id == 0 {
 		return "", errNotFound
 	}

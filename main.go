@@ -118,22 +118,31 @@ func main() {
 					}
 
 					if funcType.Results != nil {
+
 						for _, r := range funcType.Results.List {
+							op := ""
+							typeExpr := ""
+							switch t := r.Type.(type) {
+							case *ast.Ident:
+								typeExpr = t.Name
+							case *ast.ArrayType:
+								typeExpr = t.Elt.(*ast.Ident).Name
+								op = "[]"
+							case *ast.StarExpr:
+								typeExpr = t.X.(*ast.Ident).Name
+								op = "*"
+							default:
+								fmt.Printf("Unknown type: %T\n", t)
+							}
 							namedReturn := ""
 							if len(r.Names) > 0 {
 								namedReturn = r.Names[0].Name
 							}
 							m.Return = append(m.Return, arg{
 								Name: namedReturn,
-								Type: r.Type.(*ast.Ident).Name,
+								Type: typeExpr,
+								Op:   op,
 							})
-							for _, n := range r.Names {
-
-								m.Return = append(m.Return, arg{
-									Name: n.Name,
-									Type: r.Type.(*ast.Ident).Name,
-								})
-							}
 						}
 					}
 					wrappedMethods = append(wrappedMethods, m)
@@ -196,7 +205,7 @@ func main() {
 			}
 		}).ParamsFunc(func(g *jen.Group) {
 			for _, r := range m.Return {
-				g.Id(r.Name).Id(r.Type)
+				g.Id(r.Name).Op(r.Op).Id(r.Type)
 			}
 		}).Block(
 			jen.Return().Id(m.Receiver.Name).Dot(m.Name).CallFunc(func(g *jen.Group) {

@@ -20,14 +20,17 @@ var (
 	GetConnection  = getConnection
 )
 
-func (r Repository) Get(id int) (string, error) {
+func (r Repository) Get(id int) (*Entity, error) {
 	return r.get(id)
 }
-func (r *Repository) Create(q InsertQuery) (string, error) {
+func (r *Repository) List() ([]Entity, error) {
+	return r.list()
+}
+func (r *Repository) Create(q InsertQuery) (str string, err error) {
 	return r.create(q)
 }
-func (r *Repository) Update(id int, q UpdateQuery) (string, error) {
-	return r.update(id, q)
+func (r *Repository) Update(id int, partentID int, q UpdateQuery) (string, error) {
+	return r.update(id, partentID, q)
 }
 func (r *Repository) Delete(id int) error {
 	return r.delete(id)
