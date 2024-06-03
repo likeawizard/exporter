@@ -6,7 +6,7 @@ import "context"
 
 type (
 	Service     = service
-	Repository  = repository
+	Repo        = repository
 	UpdateQuery = updateQuery
 	InsertQuery = insertQuery
 )
@@ -21,18 +21,18 @@ var (
 	GetConnection  = getConnection
 )
 
-func (r Repository) Get(ctx context.Context, id int) (*Entity, error) {
+func (r Repo) Get(ctx context.Context, id int) (*Entity, error) {
 	return r.get(ctx, id)
 }
-func (r *Repository) List() ([]Entity, error) {
+func (r *Repo) List() ([]Entity, error) {
 	return r.list()
 }
-func (r *Repository) Create(q InsertQuery) (str string, err error) {
+func (r *Repo) Create(q InsertQuery) (str string, err error) {
 	return r.create(q)
 }
-func (r *Repository) Update(id int, partentID int, q UpdateQuery) (string, error) {
+func (r *Repo) Update(id int, partentID int, q UpdateQuery) (string, error) {
 	return r.update(id, partentID, q)
 }
-func (r *Repository) Delete(id int) error {
+func (r *Repo) Delete(id int) error {
 	return r.delete(id)
 }
