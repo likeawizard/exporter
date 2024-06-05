@@ -107,10 +107,8 @@ func main() {
 			//	}
 			case *ast.FuncDecl:
 				_, ok := toExport[x.Name.Name]
-				if ok {
-					if x.Recv == nil {
-						exportVariables = append(exportVariables, x.Name.Name)
-					}
+				if ok && x.Recv == nil {
+					exportVariables = append(exportVariables, x.Name.Name)
 					break
 				}
 
@@ -175,7 +173,6 @@ func main() {
 					}
 
 					if funcType.Results != nil {
-
 						for _, r := range funcType.Results.List {
 							op := ""
 							typeExpr := ""
