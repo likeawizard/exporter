@@ -42,7 +42,7 @@ func main() {
 		outName = targetOut
 	}
 	replacements := []string{targetType, outName}
-	os.Remove(fileName)
+	os.Remove(outputName)
 
 	cfg := &packages.Config{Mode: packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedTypesSizes}
 	pkgs, err := packages.Load(cfg, ".")
@@ -149,11 +149,30 @@ func main() {
 								case *ast.Ident:
 									typeExpr = t.Name
 								case *ast.ArrayType:
-									typeExpr = t.Elt.(*ast.Ident).Name
 									op = "[]"
+									switch tt := t.Elt.(type) {
+									case *ast.SelectorExpr:
+										name := tt.X.(*ast.Ident).Name
+										importsNeeded[name] = struct{}{}
+										typeExpr = tt.Sel.Name
+										qual = imports[name]
+									case *ast.Ident:
+										typeExpr = tt.Name
+									case *ast.StarExpr:
+										typeExpr = tt.X.(*ast.Ident).Name
+										op += "*"
+									}
 								case *ast.StarExpr:
-									typeExpr = t.X.(*ast.Ident).Name
 									op = "*"
+									switch tt := t.X.(type) {
+									case *ast.Ident:
+										typeExpr = tt.Name
+									case *ast.SelectorExpr:
+										name := tt.X.(*ast.Ident).Name
+										importsNeeded[name] = struct{}{}
+										typeExpr = tt.Sel.Name
+										qual = imports[name]
+									}
 								case *ast.SelectorExpr:
 									name := t.X.(*ast.Ident).Name
 									importsNeeded[name] = struct{}{}
@@ -181,11 +200,30 @@ func main() {
 							case *ast.Ident:
 								typeExpr = t.Name
 							case *ast.ArrayType:
-								typeExpr = t.Elt.(*ast.Ident).Name
 								op = "[]"
+								switch tt := t.Elt.(type) {
+								case *ast.SelectorExpr:
+									name := tt.X.(*ast.Ident).Name
+									importsNeeded[name] = struct{}{}
+									typeExpr = tt.Sel.Name
+									qual = imports[name]
+								case *ast.Ident:
+									typeExpr = tt.Name
+								case *ast.StarExpr:
+									typeExpr = tt.X.(*ast.Ident).Name
+									op += "*"
+								}
 							case *ast.StarExpr:
-								typeExpr = t.X.(*ast.Ident).Name
 								op = "*"
+								switch tt := t.X.(type) {
+								case *ast.Ident:
+									typeExpr = tt.Name
+								case *ast.SelectorExpr:
+									name := tt.X.(*ast.Ident).Name
+									importsNeeded[name] = struct{}{}
+									typeExpr = tt.Sel.Name
+									qual = imports[name]
+								}
 							case *ast.SelectorExpr:
 								name := t.X.(*ast.Ident).Name
 								importsNeeded[name] = struct{}{}
@@ -234,7 +272,7 @@ func main() {
 		})
 	}
 
-	output, err := os.Create(fileName)
+	output, err := os.Create(outputName)
 	if err != nil {
 		fmt.Println(err)
 		return
