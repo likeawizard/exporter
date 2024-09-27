@@ -37,22 +37,7 @@ var (
 )
 
 func main() {
-	flag.StringVar(&targetType, "name", "", "target type to export")
-	flag.StringVar(&targetOut, "outname", "", "name of exported target")
-	flag.StringVar(&outputName, "output", "", "output file name")
-	flag.StringVar(&buildTag, "tag", "", "build tag")
-	flag.Parse()
-
-	fileName := fmt.Sprintf("%s_export.go", targetType)
-	if outputName == "" {
-		outputName = fileName
-	}
-
-	outName = exportCase(targetType, nil)
-	if targetOut != "" {
-		outName = targetOut
-	}
-	replacements = []string{targetType, outName}
+	readFlags()
 	os.Remove(outputName)
 
 	pkg, err := readPackage()
@@ -82,6 +67,25 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+func readFlags() {
+	flag.StringVar(&targetType, "name", "", "target type to export")
+	flag.StringVar(&targetOut, "outname", "", "name of exported target")
+	flag.StringVar(&outputName, "output", "", "output file name")
+	flag.StringVar(&buildTag, "tag", "", "build tag")
+	flag.Parse()
+
+	fileName := fmt.Sprintf("%s_export.go", targetType)
+	if outputName == "" {
+		outputName = fileName
+	}
+
+	outName = exportCase(targetType, nil)
+	if targetOut != "" {
+		outName = targetOut
+	}
+	replacements = []string{targetType, outName}
 }
 
 func exportCase(s string, collisions map[string]struct{}, replace ...string) string {
