@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/dave/jennifer/jen"
-	"golang.org/x/tools/go/packages"
 	"os"
 	"strings"
 )
@@ -24,7 +23,8 @@ type methodWrapper struct {
 }
 
 var (
-	targetType, targetOut, buildTag, outputName string
+	targetType, targetOut, buildTag, outputName, outName string
+	replacements                                         []string
 
 	exportTypes     = make([]string, 0)
 	exportVariables = make([]string, 0)
@@ -49,49 +49,23 @@ func main() {
 		outputName = fileName
 	}
 
-	outName := exportCase(targetType, nil)
+	outName = exportCase(targetType, nil)
 	if targetOut != "" {
 		outName = targetOut
 	}
-	replacements := []string{targetType, outName}
+	replacements = []string{targetType, outName}
 	os.Remove(outputName)
 
-	cfg := &packages.Config{Mode: packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedTypesSizes}
-	pkgs, err := packages.Load(cfg, ".")
+	pkg, err := readPackage()
 	if err != nil {
 		fmt.Println(err)
-	}
-	pkg := pkgs[0]
-
-	for _, imp := range pkg.Imports {
-		imports[imp.Name] = imp.PkgPath
-	}
-
-	names := pkg.Types.Scope().Names()
-	for _, n := range names {
-		obj := pkg.Types.Scope().Lookup(n)
-		if !obj.Exported() {
-			toExport[obj.Name()] = struct{}{}
-		} else {
-			public[obj.Name()] = struct{}{}
-		}
-	}
-
-	if _, ok := public[outName]; ok {
-		fmt.Printf("generated type %q name already exists in package\n", outName)
 		os.Exit(1)
 	}
-
-	if _, ok := toExport[targetType]; !ok {
-		fmt.Println("target type not found in package")
+	collectImports(pkg)
+	err = collectTypes(pkg)
+	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
-	}
-
-	for k := range toExport {
-		if _, ok := public[exportCase(k, nil, replacements...)]; ok {
-			fmt.Printf("name collision for %q. skipping export...\n", k)
-			delete(toExport, k)
-		}
 	}
 
 	for _, file := range pkg.Syntax {
