@@ -7,85 +7,70 @@ import (
 	"strings"
 )
 
-type arg struct {
-	Name string
-	Type string
-	Op   string
-	Qual string
+type Config struct {
+	// TargetType is the name of package type to generate method exports.
+	TargetType string
+	// TargetOut is the name of the exported target type.
+	TargetOut string
+	// OutputName is the name of the output file.
+	OutputName string
+	// BuildTag is the build tag to add to the output file (Optional).
+	BuildTag string
 }
-
-type methodWrapper struct {
-	Receiver  arg
-	Name      string
-	Arguments []arg
-	Return    []arg
-}
-
-var (
-	targetType, targetOut, buildTag, outputName, outName string
-	replacements                                         []string
-
-	exportTypes     = make([]string, 0)
-	exportVariables = make([]string, 0)
-	exportConstants = make([]string, 0)
-	importsNeeded   = make(map[string]struct{})
-	wrappedMethods  = make([]methodWrapper, 0)
-
-	public   = make(map[string]struct{})
-	toExport = make(map[string]struct{})
-	imports  = make(map[string]string)
-)
 
 func main() {
-	readFlags()
-	os.Remove(outputName)
+	cfg := readFlags()
+	os.Remove(cfg.OutputName)
 
-	pkg, err := readPackage()
+	e := NewExport(cfg)
+
+	err := e.ReadPackage()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	collectImports(pkg)
-	err = collectTypes(pkg)
+
+	e.CollectImports()
+	err = e.CollectTypes()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	for _, file := range pkg.Syntax {
-		if file == nil {
-			continue
-		}
-		walkFile(file)
-	}
+	e.ParsePkg()
 
-	output, err := createOutput(outputName, buildTag)
+	output, err := e.createOutput()
 	defer output.Close()
 
-	err = writeFile(output, pkg.Name)
+	err = e.writeFile(output)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 }
 
-func readFlags() {
-	flag.StringVar(&targetType, "name", "", "target type to export")
-	flag.StringVar(&targetOut, "outname", "", "name of exported target")
-	flag.StringVar(&outputName, "output", "", "output file name")
-	flag.StringVar(&buildTag, "tag", "", "build tag")
+func readFlags() Config {
+	cfg := Config{}
+	flag.StringVar(&cfg.TargetType, "name", "", "target type to export")
+	flag.StringVar(&cfg.TargetOut, "outname", "", "name of exported target")
+	flag.StringVar(&cfg.OutputName, "output", "", "output file name")
+	flag.StringVar(&cfg.BuildTag, "tag", "", "build tag")
 	flag.Parse()
 
-	fileName := fmt.Sprintf("%s_export.go", targetType)
-	if outputName == "" {
-		outputName = fileName
+	if cfg.TargetType == "" {
+		fmt.Println("target type is required")
+		os.Exit(1)
 	}
 
-	outName = exportCase(targetType, nil)
-	if targetOut != "" {
-		outName = targetOut
+	if cfg.OutputName == "" {
+		cfg.OutputName = fmt.Sprintf("%s_export.go", cfg.TargetType)
 	}
-	replacements = []string{targetType, outName}
+
+	if cfg.TargetOut == "" {
+		cfg.TargetOut = exportCase(cfg.TargetType, nil)
+	}
+
+	return cfg
 }
 
 func exportCase(s string, collisions map[string]struct{}, replace ...string) string {

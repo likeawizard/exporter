@@ -6,8 +6,8 @@ import (
 )
 
 func readPackage() (*packages.Package, error) {
-	cfg := &packages.Config{Mode: packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedTypesSizes}
-	pkgs, err := packages.Load(cfg, ".")
+	loadCfg := &packages.Config{Mode: packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedTypesSizes}
+	pkgs, err := packages.Load(loadCfg, ".")
 	if err != nil {
 		return nil, err
 	}
@@ -15,13 +15,18 @@ func readPackage() (*packages.Package, error) {
 	return pkgs[0], nil
 }
 
-func collectImports(pkg *packages.Package) {
+func collectImports(pkg *packages.Package) map[string]string {
+	imports := make(map[string]string)
 	for _, imp := range pkg.Imports {
 		imports[imp.Name] = imp.PkgPath
 	}
+
+	return imports
 }
 
-func collectTypes(pkg *packages.Package) error {
+func collectTypes(pkg *packages.Package, cfg Config) (map[string]struct{}, map[string]struct{}, error) {
+	toExport := make(map[string]struct{})
+	public := make(map[string]struct{})
 	names := pkg.Types.Scope().Names()
 	for _, n := range names {
 		obj := pkg.Types.Scope().Lookup(n)
@@ -32,20 +37,20 @@ func collectTypes(pkg *packages.Package) error {
 		}
 	}
 
-	if _, ok := public[outName]; ok {
-		return fmt.Errorf("generated type %q name already exists in package", outName)
+	if _, ok := public[cfg.TargetOut]; ok {
+		return nil, nil, fmt.Errorf("generated type %q name already exists in package", cfg.TargetOut)
 	}
 
-	if _, ok := toExport[targetType]; !ok {
-		return fmt.Errorf("target type not found in package")
+	if _, ok := toExport[cfg.TargetType]; !ok {
+		return nil, nil, fmt.Errorf("target type not found in package")
 	}
 
 	for k := range toExport {
-		if _, ok := public[exportCase(k, nil, replacements...)]; ok {
+		if _, ok := public[exportCase(k, nil, cfg.TargetType, cfg.TargetOut)]; ok {
 			fmt.Printf("name collision for %q. skipping export...\n", k)
 			delete(toExport, k)
 		}
 	}
 
-	return nil
+	return toExport, public, nil
 }
