@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
+	"github.com/rs/zerolog/log"
 	"go/ast"
 	"golang.org/x/tools/go/packages"
 	"os"
@@ -155,7 +156,7 @@ func (e *Export) exportMethod(methodDecl *ast.FuncDecl, targetType string) {
 					typeExpr = t.Sel.Name
 					qual = e.imports[name]
 				default:
-					fmt.Printf("Unknown type: %T %+v\n", t, t)
+					log.Warn().Str("type", fmt.Sprintf("%T", t)).Msg("unknown type")
 				}
 				m.Arguments = append(m.Arguments, arg{
 					Name: n.Name,
@@ -206,7 +207,7 @@ func (e *Export) exportMethod(methodDecl *ast.FuncDecl, targetType string) {
 				typeExpr = t.Sel.Name
 				qual = e.imports[name]
 			default:
-				fmt.Printf("Unknown type: %T\n", t)
+				log.Warn().Str("type", fmt.Sprintf("%T", t)).Msg("unknown type")
 			}
 			namedReturn := ""
 			if len(r.Names) > 0 {
@@ -240,7 +241,7 @@ func (e *Export) exportValue(valSpec *ast.ValueSpec) {
 			case "var":
 				e.exportVariables = append(e.exportVariables, n.Name)
 			default:
-				fmt.Println("Unknown ValueSpec Kind: ", n.Obj.Kind.String())
+				log.Warn().Str("kind", n.Obj.Kind.String()).Msg("unknown kind")
 			}
 		}
 
@@ -274,8 +275,7 @@ func (e *Export) getMethodReceiver(methodDecl *ast.FuncDecl) methodWrapper {
 			Op:   "",
 		}
 	default:
-		fmt.Println("Unknown receiver", methodDecl.Name.Name, t)
-
+		log.Warn().Str("type", fmt.Sprintf("%T", t)).Str("name", methodDecl.Name.Name).Msg("unknown receiver")
 	}
 
 	return m

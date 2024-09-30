@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 type Config struct {
@@ -19,6 +22,8 @@ type Config struct {
 }
 
 func main() {
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+
 	cfg := readFlags()
 	os.Remove(cfg.OutputName)
 
@@ -26,15 +31,14 @@ func main() {
 
 	err := e.ReadPackage()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal().Err(err).Msg("failed to read package")
 	}
+	log.Info().Str("output", cfg.OutputName).Str("package", e.pkg.Name).Str("targetType", cfg.TargetType).Msg("exporting target")
 
 	e.CollectImports()
 	err = e.CollectTypes()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal().Err(err).Msg("failed to collect types")
 	}
 
 	e.ParsePkg()
@@ -44,9 +48,9 @@ func main() {
 
 	err = e.writeFile(output)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal().Err(err).Msg("failed to write output")
 	}
+	log.Info().Str("output", cfg.OutputName).Msg("exported target to file")
 }
 
 func readFlags() Config {
@@ -58,8 +62,7 @@ func readFlags() Config {
 	flag.Parse()
 
 	if cfg.TargetType == "" {
-		fmt.Println("target type is required")
-		os.Exit(1)
+		log.Fatal().Msg("target type is required")
 	}
 
 	if cfg.OutputName == "" {

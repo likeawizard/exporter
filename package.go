@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -47,7 +48,7 @@ func collectTypes(pkg *packages.Package, cfg Config) (map[string]struct{}, map[s
 
 	for k := range toExport {
 		if _, ok := public[exportCase(k, nil, cfg.TargetType, cfg.TargetOut)]; ok {
-			fmt.Printf("name collision for %q. skipping export...\n", k)
+			log.Warn().Str("name", k).Msg("name collision detected, skipping export")
 			delete(toExport, k)
 		}
 	}
