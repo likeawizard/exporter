@@ -155,6 +155,8 @@ func (e *Export) exportMethod(methodDecl *ast.FuncDecl, targetType string) {
 					e.importsNeeded[name] = struct{}{}
 					typeExpr = t.Sel.Name
 					qual = e.imports[name]
+				case *ast.MapType:
+					op = "map[" + t.Key.(*ast.Ident).Name + "]" + t.Value.(*ast.Ident).Name
 				default:
 					log.Warn().Str("type", fmt.Sprintf("%T", t)).Msg("unknown type")
 				}
@@ -206,6 +208,8 @@ func (e *Export) exportMethod(methodDecl *ast.FuncDecl, targetType string) {
 				e.importsNeeded[name] = struct{}{}
 				typeExpr = t.Sel.Name
 				qual = e.imports[name]
+			case *ast.MapType:
+				op = "map[" + t.Key.(*ast.Ident).Name + "]" + t.Value.(*ast.Ident).Name
 			default:
 				log.Warn().Str("type", fmt.Sprintf("%T", t)).Msg("unknown type")
 			}

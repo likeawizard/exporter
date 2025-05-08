@@ -66,6 +66,19 @@ func (r *repository) list() ([]Entity, error) {
 	return []Entity{}, nil
 }
 
+func (r *repository) listByID(id int) (map[int]Entity, error) {
+	_ = id
+	return map[int]Entity{}, nil
+}
+
+func (r *repository) saveBulk(e map[int]Entity) error {
+	if len(e) == 0 {
+		return errNotFound
+	}
+
+	return nil
+}
+
 func (r *repository) create(q *insertQuery) (str string, err error) {
 	if q.name == "" {
 		return "", errInvalidName

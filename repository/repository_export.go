@@ -27,6 +27,12 @@ func (r Repo) Get(ctx context.Context, id int) (*Entity, error) {
 func (r *Repo) List() ([]Entity, error) {
 	return r.list()
 }
+func (r *Repo) ListByID(id int) (map[int]Entity, error) {
+	return r.listByID(id)
+}
+func (r *Repo) SaveBulk(e map[int]Entity) error {
+	return r.saveBulk(e)
+}
 func (r *Repo) Create(q *InsertQuery) (str string, err error) {
 	return r.create(q)
 }
