@@ -59,7 +59,6 @@ func (e *Export) ReadPackage() error {
 	if err != nil {
 		return err
 	}
-
 	e.pkg = pkg
 	return nil
 }
